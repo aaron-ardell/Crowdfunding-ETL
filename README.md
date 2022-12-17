@@ -49,7 +49,131 @@ Rearrange our columns and create a new CSV without the index.
 
 ## Creating ERD and Table Schema
 
-![This is an image]()
+![This is an image](https://github.com/aaron-ardell/Crowdfunding-ETL/blob/main/crowdfunding_db_relationships.png.png)
 
-![This is an image]()
+```
+CREATE TABLE "campaign" (
+    "cf_id" int   NOT NULL,
+    "contact_id" int   NOT NULL,
+    "company_name" varchar(100)   NOT NULL,
+    "description" text   NOT NULL,
+    "goal" numeric(10,2)   NOT NULL,
+    "pledged" numeric(10,2)   NOT NULL,
+    "outcome" varchar(50)   NOT NULL,
+    "backers_count" int   NOT NULL,
+    "country" varchar(10)   NOT NULL,
+    "currency" varchar(10)   NOT NULL,
+    "launch_date" date   NOT NULL,
+    "end_date" date   NOT NULL,
+    "category_id" varchar(10)   NOT NULL,
+    "subcategory_id" varchar(10)   NOT NULL,
+    CONSTRAINT "pk_campaign" PRIMARY KEY (
+        "cf_id"
+     )
+);
 
+CREATE TABLE "contacts" (
+    "contact_id" int   NOT NULL,
+    "first_name" varchar(50)   NOT NULL,
+    "last_name" varchar(50)   NOT NULL,
+    "email" varchar(100)   NOT NULL,
+    CONSTRAINT "pk_contacts" PRIMARY KEY (
+        "contact_id"
+     )
+);
+
+CREATE TABLE "category" (
+    "category_id" varchar(10)   NOT NULL,
+    "category_name" varchar(50)   NOT NULL,
+    CONSTRAINT "pk_category" PRIMARY KEY (
+        "category_id"
+     )
+);
+
+CREATE TABLE "subcategory" (
+    "subcategory_id" varchar(10)   NOT NULL,
+    "subcategory_name" varchar(50)   NOT NULL,
+    CONSTRAINT "pk_subcategory" PRIMARY KEY (
+        "subcategory_id"
+     )
+);
+
+CREATE TABLE "backers" (
+    "backer_id" varchar(30)   NOT NULL,
+    "cf_id" int   NOT NULL,
+    "first_name" varchar(30)   NOT NULL,
+    "last_name" varchar(30)   NOT NULL,
+    "email" varchar(30)   NOT NULL,
+    CONSTRAINT "pk_backers" PRIMARY KEY (
+        "backer_id"
+     )
+);
+
+
+ALTER TABLE "campaign" ADD CONSTRAINT "fk_campaign_contact_id" FOREIGN KEY("contact_id")
+REFERENCES "contacts" ("contact_id");
+
+ALTER TABLE "campaign" ADD CONSTRAINT "fk_campaign_category_id" FOREIGN KEY("category_id")
+REFERENCES "category" ("category_id");
+
+ALTER TABLE "campaign" ADD CONSTRAINT "fk_campaign_subcategory_id" FOREIGN KEY("subcategory_id")
+REFERENCES "subcategory" ("subcategory_id");
+
+ALTER TABLE "backers" ADD CONSTRAINT "fk_backers_cf_id" FOREIGN KEY("cf_id")
+REFERENCES "campaign" ("cf_id");
+```
+
+## SQL Analysis
+
+Verifying amount of backers for our new backers table with our previous campaign table.
+
+```
+SELECT cf_id, 
+	backers_count
+FROM campaign 
+WHERE campaign.outcome = 'live'
+GROUP BY campaign.cf_id
+ORDER BY backers_count DESC;
+
+SELECT backers.cf_id, 
+	COUNT(backers.backer_id)
+FROM backers
+INNER JOIN campaign
+ON backers.cf_id = campaign.cf_id 
+WHERE campaign.outcome = 'live'
+GROUP BY campaign.cf_id, backers.cf_id
+ORDER BY COUNT(backer_id) DESC;
+```
+
+Create a list of campaign contact emails/information related to live campaigns and how much of their goal is remaining. We needed to subtract the value from the goal column from the value of the pledged column to come up with a column with the remaining goal amount.
+
+```
+SELECT contacts.first_name,
+	contacts.last_name,
+	contacts.email,
+	(campaign.goal-campaign.pledged) as "Remaining Goal Amount"
+INTO email_contacts_remaining_goal_amount
+FROM contacts
+INNER JOIN campaign
+ON contacts.contact_id = campaign.contact_id
+WHERE campaign.outcome = 'live'
+ORDER BY (goal-pledged) DESC;
+```
+
+Create a list of backers information related to live campaigns they've supported and how much of those goals are remaining.
+
+```
+SELECT backers.email,
+	backers.first_name,
+	backers.last_name,
+	campaign.cf_id,
+	campaign.company_name,
+	campaign.description,
+	campaign.end_date,
+	(campaign.goal-campaign.pledged) as "Left of Goal"
+INTO email_backers_remaining_goal_amount
+FROM backers
+INNER JOIN campaign ON backers.cf_id = campaign.cf_id
+WHERE campaign.outcome = 'live'
+ORDER BY backers.email DESC;
+```
