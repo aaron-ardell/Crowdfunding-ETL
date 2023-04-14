@@ -49,7 +49,7 @@ Rearrange our columns and create a new CSV without the index.
 
 ## Creating ERD and Table Schema
 
-![This is an image](https://github.com/aaron-ardell/Crowdfunding-ETL/blob/main/crowdfunding_db_relationships.png.png)
+![This is an image](https://github.com/aaron-ardell/Crowdfunding-ETL/blob/main/pics/crowdfunding_db_relationships.png.png)
 
 ```
 CREATE TABLE "campaign" (
@@ -160,6 +160,8 @@ WHERE campaign.outcome = 'live'
 ORDER BY (goal-pledged) DESC;
 ```
 
+![This is an image](https://github.com/aaron-ardell/Crowdfunding-ETL/blob/main/pics/email_contacts.png)
+
 Create a list of backers information related to live campaigns they've supported and how much of those goals are remaining.
 
 ```
@@ -177,3 +179,5 @@ INNER JOIN campaign ON backers.cf_id = campaign.cf_id
 WHERE campaign.outcome = 'live'
 ORDER BY backers.email DESC;
 ```
+
+![This is an image](https://github.com/aaron-ardell/Crowdfunding-ETL/blob/main/pics/email_backers.png)
